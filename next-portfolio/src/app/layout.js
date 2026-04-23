@@ -25,18 +25,26 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col">
         <header className="bg-black text-white">
-          <nav className="mx-auto flex w-full max-w-5xl items-center gap-6 px-6 py-4">
-            <Link className="text-sm font-medium transition-opacity hover:opacity-80" href="/">
-              Main
-            </Link>
-            <Link className="text-sm font-medium transition-opacity hover:opacity-80" href="/home">
-              Home
-            </Link>
-            <Link className="text-sm font-medium transition-opacity hover:opacity-80" href="/about">
-              About
-            </Link>
-             <Link className="text-sm font-medium transition-opacity hover:opacity-80" href="/shadcntest">
-              shadcnTest
+          <nav className="mx-auto flex w-full max-w-5xl items-center justify-between gap-6 px-6 py-4">
+            <div className="flex items-center gap-6">
+              <Link className="text-sm font-medium transition-opacity hover:opacity-80" href="/">
+                Main
+              </Link>
+              <Link className="text-sm font-medium transition-opacity hover:opacity-80" href="/home">
+                Home
+              </Link>
+              <Link className="text-sm font-medium transition-opacity hover:opacity-80" href="/about">
+                About
+              </Link>
+              <Link className="text-sm font-medium transition-opacity hover:opacity-80" href="/shadcntest">
+                shadcnTest
+              </Link>
+            </div>
+            <Link
+              className="rounded-md border border-white/30 px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-80"
+              href="/login"
+            >
+              Login
             </Link>
           </nav>
         </header>

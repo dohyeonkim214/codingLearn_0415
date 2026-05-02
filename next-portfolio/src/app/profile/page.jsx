@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 
 const profileSchema = z.object({
   username: z.string().min(2, { message: "닉네임은 최소 2글자 이상이어야 합니다." }),
@@ -28,8 +29,7 @@ export default function ProfilePage() {
   })
 
   function onSubmit(values) {
-    console.log(values)
-    alert(`저장된 닉네임: ${values.username}`)
+    toast.success(`프로필 업데이트 완료! 닉네임: ${values.username}`)
   }
 
   return (

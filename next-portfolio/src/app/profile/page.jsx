@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Loader2 } from "lucide-react"
 import { z } from "zod"
 
 import {
@@ -63,8 +64,11 @@ export default function ProfilePage() {
       theme: "system",
     },
   })
+  const { isSubmitting } = form.formState
 
-  function onSubmit(values) {
+  async function onSubmit(values) {
+    await new Promise((resolve) => setTimeout(resolve, 5000))
+
     toast.success("프로필 저장 성공!", {
       description: `이메일: ${values.email} / 직업: ${values.role}`,
     })
@@ -212,8 +216,15 @@ export default function ProfilePage() {
                 )}
               />
 
-              <Button type="submit" className="w-full sm:w-auto">
-                저장
+              <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    저장 중...
+                  </>
+                ) : (
+                  "저장"
+                )}
               </Button>
             </form>
           </Form>

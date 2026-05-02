@@ -1,6 +1,6 @@
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-slate-100 px-6 py-16 text-slate-900">
+    <main className="min-h-screen bg-background px-6 py-16 text-foreground">
       <section className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[2rem] bg-white p-8 shadow-xl shadow-slate-200 md:p-12">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-sky-600">

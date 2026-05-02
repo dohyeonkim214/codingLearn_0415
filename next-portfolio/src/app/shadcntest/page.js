@@ -13,7 +13,7 @@ function Section({ title, children }) {
 
 export default function ShadcnTestPage() {
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-16 text-slate-900">
+    <main className="min-h-screen bg-background px-6 py-16 text-foreground">
       <div className="mx-auto max-w-4xl space-y-12">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-950">

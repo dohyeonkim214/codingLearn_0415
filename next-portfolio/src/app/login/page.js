@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader className="space-y-1 pb-4">
           <CardTitle className="text-2xl font-black text-slate-950">로그인</CardTitle>

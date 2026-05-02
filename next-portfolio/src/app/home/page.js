@@ -1,6 +1,6 @@
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-sky-100 px-6 py-16 text-slate-900">
+    <main className="min-h-screen bg-gradient-to-br from-background via-background to-muted/40 px-6 py-16 text-foreground">
       <section className="mx-auto flex w-full max-w-6xl flex-col gap-10 rounded-[2rem] border border-slate-200/70 bg-white/80 p-8 shadow-2xl shadow-slate-200/60 backdrop-blur md:p-12">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl space-y-5">

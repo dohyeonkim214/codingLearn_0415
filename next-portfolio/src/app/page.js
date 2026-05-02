@@ -1,8 +1,9 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#e0f2fe,_#f8fafc_45%,_#ffffff_100%)] px-6 py-16 text-slate-900">
+    <main className="min-h-screen bg-gradient-to-b from-background via-background to-muted/40 px-6 py-16 text-foreground">
       <section className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="space-y-6">
           <span className="inline-flex rounded-full border border-sky-200 bg-white/80 px-4 py-1.5 text-sm font-semibold text-sky-700 shadow-sm backdrop-blur">
@@ -48,6 +49,20 @@ export default function Home() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto mt-16 w-full max-w-6xl">
+        <h2 className="mb-6 text-2xl font-bold text-slate-950">페이지 둘러보기</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link
+            href="/profile"
+            className="group rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg shadow-slate-200/50 backdrop-blur transition-shadow hover:shadow-xl"
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Profile</p>
+            <p className="mt-3 text-xl font-bold text-slate-950 group-hover:text-sky-600 transition-colors">프로필 수정</p>
+            <p className="mt-2 text-sm text-slate-500">닉네임 등 프로필 정보를 수정합니다.</p>
+          </Link>
         </div>
       </section>
     </main>

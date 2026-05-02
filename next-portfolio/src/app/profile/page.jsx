@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2 } from "lucide-react"
@@ -30,6 +31,24 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { toast } from "sonner"
 
+async function fetchUserData() {
+  return new Promise((resolve) =>
+    setTimeout(
+      () =>
+        resolve({
+          username: "dohyeon_developer",
+          email: "dohyeon@example.com",
+          password: "",
+          bio: "Toronto based developer",
+          role: "developer",
+          marketing_emails: true,
+          theme: "dark",
+        }),
+      1500
+    )
+  )
+}
+
 const roleOptions = ["developer", "designer", "manager"]
 
 const profileSchema = z.object({
@@ -52,6 +71,8 @@ const profileSchema = z.object({
 })
 
 export default function ProfilePage() {
+  const [isLoading, setIsLoading] = useState(true)
+
   const form = useForm({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -66,12 +87,36 @@ export default function ProfilePage() {
   })
   const { isSubmitting } = form.formState
 
-  async function onSubmit(values) {
-    await new Promise((resolve) => setTimeout(resolve, 5000))
-
-    toast.success("프로필 저장 성공!", {
-      description: `이메일: ${values.email} / 직업: ${values.role}`,
+  useEffect(() => {
+    fetchUserData().then((data) => {
+      form.reset(data)
+      setIsLoading(false)
     })
+  }, [])
+
+  async function onSubmit(values) {
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 5000))
+
+      if (Math.random() < 0.5) throw new Error("서버 응답 지연")
+
+      toast.success("프로필 저장 성공!", {
+        description: `이메일: ${values.email} / 직업: ${values.role}`,
+      })
+    } catch {
+      toast.error("저장 실패", {
+        description: "서버에 문제가 발생했습니다. 다시 시도해주세요.",
+      })
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">사용자 정보를 불러오는 중...</p>
+      </div>
+    )
   }
 
   return (

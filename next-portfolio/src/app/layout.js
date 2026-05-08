@@ -47,6 +47,12 @@ export default function RootLayout({ children }) {
                 <Link className="text-sm font-medium transition-opacity hover:opacity-80" href="/profile">
                   Profile
                 </Link>
+                <Link className="text-sm font-medium transition-opacity hover:opacity-80" href="/dashboard">
+                  Dashboard
+                </Link>
+                <Link className="text-sm font-medium transition-opacity hover:opacity-80" href="/tailwind">
+                  Tailwind
+                </Link>
               </div>
               
               <div className="flex items-center gap-3">

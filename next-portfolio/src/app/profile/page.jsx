@@ -33,6 +33,14 @@ import { getSupabaseClient, supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
 const roleOptions = ["developer", "designer", "manager"]
+const emptyProfileValues = {
+  username: "",
+  email: "",
+  bio: "",
+  role: "",
+  marketing_emails: false,
+  theme: "system",
+}
 
 const profileSchema = z.object({
   username: z
@@ -54,17 +62,11 @@ const profileSchema = z.object({
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [profileId, setProfileId] = useState(null)
 
   const form = useForm({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      username: "",
-      email: "",
-      bio: "",
-      role: "",
-      marketing_emails: false,
-      theme: "system",
-    },
+    defaultValues: emptyProfileValues,
   })
   const { isSubmitting } = form.formState
 
@@ -78,10 +80,12 @@ export default function ProfilePage() {
           .order("created_at", { ascending: false })
           .limit(1)
           .single()
+        // 리뷰: 현재 select는 내림차순 _ limit으로 1건 조회하는 코드임. 하지만 명확한 필터가 없어서, 특정한 필터를 두는 게 맞음. eq 같은 것. 인공지능은 maybeSingle 검토를 요청함.
 
         if (error) throw error
 
         form.reset(data)
+        setProfileId(data.id)
       } catch (error) {
         console.error(error)
         toast.error("데이터를 불러오지 못했습니다")
@@ -96,12 +100,19 @@ export default function ProfilePage() {
   async function onSubmit(values) {
     try {
       const client = supabase ?? getSupabaseClient()
-
-      const { error } = await client.from("profiles").insert([values])
+      const payload = profileId ? { id: profileId, ...values } : values
+      const { data, error } = await client
+        .from("profiles")
+        .upsert([payload], { onConflict: "id" })
+        .select("id")
+        .single()
+      //리뷰: 역시 같은 논리로, 여기서는 id가 있으면 update, 미존재시 insert로 동작하는 코드임. 하지만 중복생성 가능성을 고려해서 profileid 누락을 막아야 함. 1인 1프로필 정책인가?
 
       if (error) throw error
 
-      toast.success("프로필 저장 성공!", {
+      if (data?.id) setProfileId(data.id)
+
+      toast.success("프로필 저장 완료!", {
         description: `이메일: ${values.email} / 직업: ${values.role}`,
       })
     } catch (error) {
@@ -111,6 +122,28 @@ export default function ProfilePage() {
       })
     }
   }
+
+  async function handleDelete() {
+    const confirmed = window.confirm("정말 프로필을 삭제하시겠습니까?")
+    if (!confirmed || !profileId) return
+
+    try {
+      const client = supabase ?? getSupabaseClient()
+      const { error } = await client.from("profiles").delete().eq("id", profileId)
+
+      if (error) throw error
+
+      toast.success("프로필이 삭제되었습니다")
+      form.reset(emptyProfileValues)
+      setProfileId(null)
+    } catch (error) {
+      console.error(error)
+      toast.error("삭제 실패", {
+        description: "프로필 삭제 중 문제가 발생했습니다.",
+      })
+    }
+  }
+  //리뷰: 인공지능 코멘트: 빈 데이터 상황에서 single 사용, 첫 진입 실패 가능? 사용자 범위 누락. 사용자 식별 필터...
 
   if (isLoading) {
     return (
@@ -249,16 +282,24 @@ export default function ProfilePage() {
                 )}
               />
 
-              <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    저장 중...
-                  </>
-                ) : (
-                  "저장"
+              <div className="flex flex-wrap items-center gap-3">
+                <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      저장 중...
+                    </>
+                  ) : (
+                    "저장"
+                  )}
+                </Button>
+
+                {profileId && (
+                  <Button type="button" variant="destructive" onClick={handleDelete}>
+                    프로필 삭제
+                  </Button>
                 )}
-              </Button>
+              </div>
             </form>
           </Form>
         </CardContent>

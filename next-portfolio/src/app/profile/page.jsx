@@ -62,6 +62,7 @@ const profileSchema = z.object({
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [profileId, setProfileId] = useState(null)
 
   const form = useForm({
@@ -71,30 +72,34 @@ export default function ProfilePage() {
   const { isSubmitting } = form.formState
 
   useEffect(() => {
-    async function fetchLatestProfile() {
+    async function fetchUserData() {
       try {
-        const client = supabase ?? getSupabaseClient()
-        const { data, error } = await client
-          .from("profiles")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single()
-        // 리뷰: 현재 select는 내림차순 _ limit으로 1건 조회하는 코드임. 하지만 명확한 필터가 없어서, 특정한 필터를 두는 게 맞음. eq 같은 것. 인공지능은 maybeSingle 검토를 요청함.
+        setError(null)
 
-        if (error) throw error
+        const res = await fetch("/api/profiles")
+        const json = await res.json()
 
-        form.reset(data)
-        setProfileId(data.id)
+        if (!res.ok) {
+          throw new Error(json?.error ?? "데이터를 불러오지 못했습니다")
+        }
+
+        if (json?.data) {
+          form.reset(json.data)
+          setProfileId(json.data.id ?? null)
+        } else {
+          form.reset(emptyProfileValues)
+          setProfileId(null)
+        }
       } catch (error) {
         console.error(error)
+        setError(error instanceof Error ? error.message : "데이터를 불러오지 못했습니다")
         toast.error("데이터를 불러오지 못했습니다")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchLatestProfile()
+    fetchUserData()
   }, [form])
 
   async function onSubmit(values) {
@@ -162,6 +167,7 @@ export default function ProfilePage() {
           <CardDescription>계정 정보, 알림, 테마를 한 번에 설정하세요.</CardDescription>
         </CardHeader>
         <CardContent>
+          {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField

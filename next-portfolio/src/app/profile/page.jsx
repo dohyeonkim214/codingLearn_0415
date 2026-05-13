@@ -104,18 +104,22 @@ export default function ProfilePage() {
 
   async function onSubmit(values) {
     try {
-      const client = supabase ?? getSupabaseClient()
       const payload = profileId ? { id: profileId, ...values } : values
-      const { data, error } = await client
-        .from("profiles")
-        .upsert([payload], { onConflict: "id" })
-        .select("id")
-        .single()
-      //리뷰: 역시 같은 논리로, 여기서는 id가 있으면 update, 미존재시 insert로 동작하는 코드임. 하지만 중복생성 가능성을 고려해서 profileid 누락을 막아야 함. 1인 1프로필 정책인가?
+      const res = await fetch("/api/profiles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
 
-      if (error) throw error
+      const json = await res.json()
 
-      if (data?.id) setProfileId(data.id)
+      if (!res.ok) {
+        throw new Error(json?.error ?? "저장 실패")
+      }
+
+      if (json?.data?.[0]?.id) setProfileId(json.data[0].id)
 
       toast.success("프로필 저장 완료!", {
         description: `이메일: ${values.email} / 직업: ${values.role}`,

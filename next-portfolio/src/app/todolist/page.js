@@ -4,7 +4,6 @@ import { useId, useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getSupabaseClient, supabase } from '@/lib/supabase'
 import './todolist.css'
 
 function TrashIcon() {
@@ -25,19 +24,30 @@ export default function TodoListPage() {
   const [todos, setTodos] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Supabase에서 todos 불러오기
+  const fetchApi = async (url, options = {}) => {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers ?? {}),
+      },
+    })
+
+    const payload = await response.json().catch(() => ({}))
+
+    if (!response.ok) {
+      throw new Error(payload?.error || '요청에 실패했습니다')
+    }
+
+    return payload
+  }
+
+  // API에서 todos 불러오기
   useEffect(() => {
     async function fetchTodos() {
       try {
-        const client = supabase ?? getSupabaseClient()
-        const { data, error } = await client
-          .from('todolist')
-          .select('*')
-          .order('created_at', { ascending: false })
-
-        if (error) throw error
-
-        setTodos(data ?? [])
+        const payload = await fetchApi('/api/todolist')
+        setTodos(payload.data ?? [])
       } catch (error) {
         console.error(error)
         toast.error('할 일 목록을 불러오지 못했습니다')
@@ -56,16 +66,12 @@ export default function TodoListPage() {
     if (!trimmedValue) return
 
     try {
-      const client = supabase ?? getSupabaseClient()
-      const { data, error } = await client
-        .from('todolist')
-        .insert([{ title: trimmedValue, completed: false }])
-        .select()
-        .single()
+      const payload = await fetchApi('/api/todolist', {
+        method: 'POST',
+        body: JSON.stringify({ title: trimmedValue }),
+      })
 
-      if (error) throw error
-
-      setTodos((currentTodos) => [data, ...currentTodos])
+      setTodos((currentTodos) => [payload.data, ...currentTodos])
       setInputValue('')
       inputRef.current?.focus()
       toast.success('할 일이 추가되었습니다')
@@ -80,17 +86,15 @@ export default function TodoListPage() {
     if (!todo) return
 
     try {
-      const client = supabase ?? getSupabaseClient()
-      const { error } = await client
-        .from('todolist')
-        .update({ completed: !todo.completed })
-        .eq('id', todoId)
-
-      if (error) throw error
+      const payload = await fetchApi('/api/todolist', {
+        method: 'PATCH',
+        body: JSON.stringify({ id: todoId, completed: !todo.completed }),
+      })
+      const updatedTodo = payload.data
 
       setTodos((currentTodos) =>
         currentTodos.map((t) =>
-          t.id === todoId ? { ...t, completed: !t.completed } : t,
+          t.id === todoId ? { ...t, ...updatedTodo } : t,
         ),
       )
     } catch (error) {
@@ -101,13 +105,10 @@ export default function TodoListPage() {
 
   const handleDeleteTodo = async (todoId) => {
     try {
-      const client = supabase ?? getSupabaseClient()
-      const { error } = await client
-        .from('todolist')
-        .delete()
-        .eq('id', todoId)
-
-      if (error) throw error
+      await fetchApi('/api/todolist', {
+        method: 'DELETE',
+        body: JSON.stringify({ id: todoId }),
+      })
 
       setTodos((currentTodos) => currentTodos.filter((t) => t.id !== todoId))
       toast.success('할 일이 삭제되었습니다')

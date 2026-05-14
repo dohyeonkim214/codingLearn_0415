@@ -29,7 +29,6 @@ import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { getSupabaseClient, supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
 const roleOptions = ["developer", "designer", "manager"]
@@ -137,10 +136,19 @@ export default function ProfilePage() {
     if (!confirmed || !profileId) return
 
     try {
-      const client = supabase ?? getSupabaseClient()
-      const { error } = await client.from("profiles").delete().eq("id", profileId)
+      const res = await fetch("/api/profiles", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: profileId }),
+      })
 
-      if (error) throw error
+      const json = await res.json()
+
+      if (!res.ok) {
+        throw new Error(json?.error ?? "삭제 실패")
+      }
 
       toast.success("프로필이 삭제되었습니다")
       form.reset(emptyProfileValues)

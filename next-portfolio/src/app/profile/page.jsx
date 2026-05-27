@@ -29,6 +29,7 @@ import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { getSupabaseClient, supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
 const roleOptions = ["developer", "designer", "manager"]
@@ -61,7 +62,6 @@ const profileSchema = z.object({
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [profileId, setProfileId] = useState(null)
 
   const form = useForm({
@@ -71,54 +71,46 @@ export default function ProfilePage() {
   const { isSubmitting } = form.formState
 
   useEffect(() => {
-    async function fetchUserData() {
+    async function fetchLatestProfile() {
       try {
-        setError(null)
+        const client = supabase ?? getSupabaseClient()
+        const { data, error } = await client
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single()
+        // 리뷰: 현재 select는 내림차순 _ limit으로 1건 조회하는 코드임. 하지만 명확한 필터가 없어서, 특정한 필터를 두는 게 맞음. eq 같은 것. 인공지능은 maybeSingle 검토를 요청함.
+        // 0517: Gemini 왈: client가 새로 생성될 위험? .single 문제점(유저의 데이터가 한건도 없다면...)
+        if (error) throw error
 
-        const res = await fetch("/api/profiles")
-        const json = await res.json()
-
-        if (!res.ok) {
-          throw new Error(json?.error ?? "데이터를 불러오지 못했습니다")
-        }
-
-        if (json?.data) {
-          form.reset(json.data)
-          setProfileId(json.data.id ?? null)
-        } else {
-          form.reset(emptyProfileValues)
-          setProfileId(null)
-        }
+        form.reset(data)
+        setProfileId(data.id)
       } catch (error) {
         console.error(error)
-        setError(error instanceof Error ? error.message : "데이터를 불러오지 못했습니다")
         toast.error("데이터를 불러오지 못했습니다")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchUserData()
+    fetchLatestProfile()
   }, [form])
 
   async function onSubmit(values) {
     try {
+      const client = supabase ?? getSupabaseClient()
       const payload = profileId ? { id: profileId, ...values } : values
-      const res = await fetch("/api/profiles", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
+      const { data, error } = await client
+        .from("profiles")
+        .upsert([payload], { onConflict: "id" })
+        .select("id")
+        .single()
+      //리뷰: 역시 같은 논리로, 여기서는 id가 있으면 update, 미존재시 insert로 동작하는 코드임. 하지만 중복생성 가능성을 고려해서 profileid 누락을 막아야 함. 1인 1프로필 정책인가?
 
-      const json = await res.json()
+      if (error) throw error
 
-      if (!res.ok) {
-        throw new Error(json?.error ?? "저장 실패")
-      }
-
-      if (json?.data?.[0]?.id) setProfileId(json.data[0].id)
+      if (data?.id) setProfileId(data.id)
 
       toast.success("프로필 저장 완료!", {
         description: `이메일: ${values.email} / 직업: ${values.role}`,
@@ -136,19 +128,10 @@ export default function ProfilePage() {
     if (!confirmed || !profileId) return
 
     try {
-      const res = await fetch("/api/profiles", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: profileId }),
-      })
+      const client = supabase ?? getSupabaseClient()
+      const { error } = await client.from("profiles").delete().eq("id", profileId)
 
-      const json = await res.json()
-
-      if (!res.ok) {
-        throw new Error(json?.error ?? "삭제 실패")
-      }
+      if (error) throw error
 
       toast.success("프로필이 삭제되었습니다")
       form.reset(emptyProfileValues)
@@ -160,7 +143,7 @@ export default function ProfilePage() {
       })
     }
   }
-  //리뷰: 인공지능 코멘트: 빈 데이터 상황에서 single 사용, 첫 진입 실패 가능? 사용자 범위 누락. 사용자 식별 필터...
+  //리뷰: 인공지능 코멘트: 빈 데이터 상황에서 single 사용(maybeSingle?), 첫 진입 실패 가능? 사용자 범위 누락. 사용자 식별 필터...
 
   if (isLoading) {
     return (
@@ -179,7 +162,6 @@ export default function ProfilePage() {
           <CardDescription>계정 정보, 알림, 테마를 한 번에 설정하세요.</CardDescription>
         </CardHeader>
         <CardContent>
-          {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField

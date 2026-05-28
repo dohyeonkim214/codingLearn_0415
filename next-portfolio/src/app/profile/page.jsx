@@ -61,6 +61,7 @@ const profileSchema = z.object({
 })
 
 export default function ProfilePage() {
+  const [authUser, setAuthUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [profileId, setProfileId] = useState(null)
 
@@ -71,6 +72,24 @@ export default function ProfilePage() {
   const { isSubmitting } = form.formState
 
   useEffect(() => {
+    async function fetchAuthUser() {
+      try {
+        const client = supabase ?? getSupabaseClient()
+        const { data, error } = await client.auth.getUser()
+
+        if (error) throw error
+
+        setAuthUser(data.user ?? null)
+      } catch (error) {
+        console.error(error)
+        setAuthUser(null)
+      }
+    }
+
+    fetchAuthUser()
+  }, [])
+
+  useEffect(() => {
     async function fetchLatestProfile() {
       try {
         const client = supabase ?? getSupabaseClient()
@@ -79,13 +98,27 @@ export default function ProfilePage() {
           .select("*")
           .order("created_at", { ascending: false })
           .limit(1)
-          .single()
+          .maybeSingle()
         // 리뷰: 현재 select는 내림차순 _ limit으로 1건 조회하는 코드임. 하지만 명확한 필터가 없어서, 특정한 필터를 두는 게 맞음. eq 같은 것. 인공지능은 maybeSingle 검토를 요청함.
         // 0517: Gemini 왈: client가 새로 생성될 위험? .single 문제점(유저의 데이터가 한건도 없다면...)
         if (error) throw error
 
-        form.reset(data)
-        setProfileId(data.id)
+        if (data) {
+          form.reset({
+            ...emptyProfileValues,
+            ...data,
+          })
+          setProfileId(data.id)
+          return
+        }
+
+        form.reset({
+          ...emptyProfileValues,
+          email: authUser?.email ?? "",
+          username: "",
+          bio: "",
+        })
+        setProfileId(null)
       } catch (error) {
         console.error(error)
         toast.error("데이터를 불러오지 못했습니다")
@@ -95,7 +128,7 @@ export default function ProfilePage() {
     }
 
     fetchLatestProfile()
-  }, [form])
+  }, [authUser, form])
 
   async function onSubmit(values) {
     try {
@@ -185,7 +218,7 @@ export default function ProfilePage() {
                   <FormItem>
                     <FormLabel>이메일</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="name@example.com" {...field} />
+                      <Input type="email" placeholder="name@example.com" readOnly {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
